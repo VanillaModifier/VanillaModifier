@@ -47,3 +47,4 @@ bin/
 .idea/misc.xml
 .idea/vcs.xml
 .idea/thriftCompiler.xml
+.idea/workspace.xml

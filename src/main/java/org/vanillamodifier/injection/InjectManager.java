@@ -5,13 +5,14 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import org.vanillamodifier.VanillaModifier;
 import org.vanillamodifier.interfaces.ClassTransformer;
 import org.vanillamodifier.loader.NativeWrapper;
 import org.vanillamodifier.struct.Returnable;
 import org.vanillamodifier.util.ASMUtil;
 import org.vanillamodifier.util.RandomStringUtil;
+import org.vanillamodifier.annotations.Inject;
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,13 +21,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class CodeInjector implements ClassTransformer {
+public class InjectManager implements ClassTransformer {
     private final Map<ClassNode,String> classNodes = new ConcurrentHashMap<>();
     private final List<Class<?>> needTransform = new ArrayList<>();
     private final ClassNode wrapper;
     private boolean defineWrapper = true;
 
-    public CodeInjector(){
+    public InjectManager(){
         wrapper = new ClassNode();
         wrapper.visit(V1_8, ACC_PUBLIC, "InjectWrapper_" + RandomStringUtil.getRandomString(10), null, "java/lang/Object", null);
     }
@@ -40,15 +41,12 @@ public class CodeInjector implements ClassTransformer {
     }
 
     public void process(){
-
         Map<Class<?>,byte[]> transformMap = new ConcurrentHashMap<>();
-
         for(Class<?> clazz : needTransform){
             ClassNode classNode = ASMUtil.toClassNode(NativeWrapper.getClassBytes(clazz));
             transform(classNode);
             transformMap.put(clazz,ASMUtil.toBytes(classNode));
         }
-
         if(isDefineWrapper()){
             byte[] bytes = compileWrapper();
             try {
@@ -57,15 +55,12 @@ public class CodeInjector implements ClassTransformer {
                 throw new RuntimeException(e);
             }
         }
-
-        transformMap.forEach((clazz, bytes) -> InjectEngine.instance.getJvmtiWrapper().redefineClass(clazz,bytes));
-
+        transformMap.forEach(NativeWrapper::redefineClass);
     }
 
     public void addProcessor(Class<?> processorClass, Class<?> target) {
         try {
-
-            ClassReader classReader = new ClassReader(sourceMap.get(processorClass.getName().replace(".","/")));
+            ClassReader classReader = new ClassReader(NativeWrapper.getClassBytes(processorClass));
             ClassNode classNode = new ClassNode();
             classReader.accept(classNode, 0);
             classNodes.put(classNode,target.getName());
@@ -96,7 +91,7 @@ public class CodeInjector implements ClassTransformer {
                 continue;
             }
 
-            Class<?> wrapperClass = InjectEngine.instance.getAddonAPI().getLoader().getClassInLoader(transformClassNode.name.replace("/", "."));
+            Class<?> wrapperClass = VanillaModifier.API.getLoader().getClassInLoader(transformClassNode.name.replace("/", "."));
 
             for (Method wrapperMethod : wrapperClass.getDeclaredMethods()) {
                 Inject method = wrapperMethod.getAnnotation(Inject.class);

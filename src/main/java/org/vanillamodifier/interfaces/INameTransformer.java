@@ -1,5 +1,5 @@
 package org.vanillamodifier.interfaces;
 
-public interface NameTransformer {
+public interface INameTransformer {
     String transform(String source);
 }

@@ -1,8 +1,11 @@
 package org.vanillamodifier;
 
 import com.cubk.event.EventManager;
+import com.cubk.event.annotations.EventTarget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiIngame;
+import org.tinylog.Logger;
+import org.vanillamodifier.events.client.RenderGameOverlayEvent;
 import org.vanillamodifier.events.internal.AddHookEvent;
 import org.vanillamodifier.events.internal.StartHookEvent;
 import org.vanillamodifier.injection.InjectManager;
@@ -27,6 +30,7 @@ public class VanillaModifier {
             vmDataDir.mkdir();
         if(!modDataDir.exists())
             modDataDir.mkdir();
+        Logger.info("Loading plugins...");
         API.loadAll(modDataDir);
         try {
             AddHookEvent event = new AddHookEvent();
@@ -43,6 +47,7 @@ public class VanillaModifier {
     }
 
     private static void addHooks() throws ClassNotFoundException {
+        Logger.info("Registering event hooks...");
         CODE_INJECTOR.addProcessor(MinecraftHook.class, Minecraft.class);
         CODE_INJECTOR.addProcessor(GuiInGameHook.class, GuiIngame.class);
     }

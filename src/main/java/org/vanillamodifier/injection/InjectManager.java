@@ -5,15 +5,18 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import org.tinylog.Logger;
 import org.vanillamodifier.VanillaModifier;
-import org.vanillamodifier.interfaces.ClassTransformer;
-import org.vanillamodifier.interfaces.NameTransformer;
+import org.vanillamodifier.interfaces.IClassTransformer;
+import org.vanillamodifier.interfaces.INameTransformer;
 import org.vanillamodifier.loader.NativeWrapper;
 import org.vanillamodifier.struct.Returnable;
 import org.vanillamodifier.util.ASMUtil;
 import org.vanillamodifier.util.RandomStringUtil;
 import org.vanillamodifier.annotations.Inject;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.objectweb.asm.Opcodes.*;
 
-public class InjectManager implements ClassTransformer {
-    private NameTransformer nameTransformer = source -> {
+public class InjectManager implements IClassTransformer {
+    private INameTransformer nameTransformer = source -> {
         System.out.println(source);
         return source;
     };
@@ -38,7 +41,7 @@ public class InjectManager implements ClassTransformer {
         wrapper.visit(V1_8, ACC_PUBLIC, "InjectWrapper_" + RandomStringUtil.getRandomString(10), null, "java/lang/Object", null);
     }
 
-    public void setNameTransformer(NameTransformer nameTransformer) {
+    public void setNameTransformer(INameTransformer nameTransformer) {
         this.nameTransformer = nameTransformer;
     }
 
@@ -55,6 +58,7 @@ public class InjectManager implements ClassTransformer {
             Map<Class<?>,byte[]> transformMap = new ConcurrentHashMap<>();
             for(Class<?> clazz : needTransform){
                 byte[] code = NativeWrapper.getClassBytes(clazz);
+                Logger.debug(code.length);
                 ClassNode classNode = ASMUtil.toClassNode(code);
                 transform(classNode);
                 transformMap.put(clazz,ASMUtil.toBytes(classNode));
@@ -79,6 +83,7 @@ public class InjectManager implements ClassTransformer {
 
     public void addProcessor(Class<?> processorClass, Class<?> target) {
         try {
+            Logger.info("Registered hook class {} (for {})",processorClass.getSimpleName(),target.getSimpleName());
             ClassReader classReader = new ClassReader(NativeWrapper.getClassBytes(processorClass));
             ClassNode classNode = new ClassNode();
             classReader.accept(classNode, 0);

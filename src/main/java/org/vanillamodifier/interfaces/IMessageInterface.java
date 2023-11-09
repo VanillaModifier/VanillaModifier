@@ -1,5 +1,5 @@
 package org.vanillamodifier.interfaces;
 
-public interface MessageInterface {
+public interface IMessageInterface {
     void log(String message);
 }

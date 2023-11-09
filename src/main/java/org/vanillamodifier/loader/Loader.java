@@ -1,10 +1,12 @@
 package org.vanillamodifier.loader;
 
 
+import org.tinylog.Logger;
 import org.vanillamodifier.VanillaModifier;
 
 public class Loader {
-    public static void load(){
-        new Thread(VanillaModifier::initialize).start();
+    public Loader(){
+        Logger.info("Initializing...");
+        VanillaModifier.initialize();
     }
 }

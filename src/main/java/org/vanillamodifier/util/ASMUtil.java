@@ -13,24 +13,64 @@ import java.lang.reflect.Method;
 
 public class ASMUtil {
     public static int getLoadOpcode(String descriptor) {
-        return switch (descriptor.replace("[", "")) {
-            case "Z", "C", "B", "S", "I" -> Opcodes.ILOAD;
-            case "J" -> Opcodes.LLOAD;
-            case "D" -> Opcodes.DLOAD;
-            case "F" -> Opcodes.FLOAD;
-            default -> Opcodes.ALOAD;
-        };
+        String type = descriptor.replace("[", "");
+        int opcode;
+
+        switch (type) {
+            case "Z":
+            case "C":
+            case "B":
+            case "S":
+            case "I":
+                opcode = Opcodes.ILOAD;
+                break;
+            case "J":
+                opcode = Opcodes.LLOAD;
+                break;
+            case "D":
+                opcode = Opcodes.DLOAD;
+                break;
+            case "F":
+                opcode = Opcodes.FLOAD;
+                break;
+            default:
+                opcode = Opcodes.ALOAD;
+                break;
+        }
+
+        return opcode;
     }
 
     public static int getReturnOpcode(String descriptor) {
-        return switch (descriptor.replace("[", "")) {
-            case "Z", "C", "B", "S", "I" -> Opcodes.IRETURN;
-            case "J" -> Opcodes.LRETURN;
-            case "D" -> Opcodes.DRETURN;
-            case "F" -> Opcodes.FRETURN;
-            case "V" -> Opcodes.RETURN;
-            default -> Opcodes.ARETURN;
-        };
+        String type = descriptor.replace("[", "");
+        int opcode;
+
+        switch (type) {
+            case "Z":
+            case "C":
+            case "B":
+            case "S":
+            case "I":
+                opcode = Opcodes.IRETURN;
+                break;
+            case "J":
+                opcode = Opcodes.LRETURN;
+                break;
+            case "D":
+                opcode = Opcodes.DRETURN;
+                break;
+            case "F":
+                opcode = Opcodes.FRETURN;
+                break;
+            case "V":
+                opcode = Opcodes.RETURN;
+                break;
+            default:
+                opcode = Opcodes.ARETURN;
+                break;
+        }
+
+        return opcode;
     }
 
     public static String getDescriptor(Class<?> klass) {

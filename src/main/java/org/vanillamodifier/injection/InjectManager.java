@@ -132,6 +132,7 @@ public class InjectManager implements ClassTransformer {
 
                 MethodNode injectToTargetMethodNode = new MethodNode(injectMethodNode.access, newName, injectMethodNode.desc, null, null);
                 injectToTargetMethodNode.instructions.add(injectMethodNode.instructions);
+                injectToTargetMethodNode.access = ACC_PUBLIC | ACC_STATIC;
                 wrapper.methods.add(injectToTargetMethodNode);
 
                 for (MethodNode targetMethodNode : classNode.methods) {

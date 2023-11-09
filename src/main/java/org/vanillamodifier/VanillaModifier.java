@@ -1,9 +1,12 @@
 package org.vanillamodifier;
 
 import com.cubk.event.EventManager;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiIngame;
 import org.vanillamodifier.events.internal.AddHookEvent;
 import org.vanillamodifier.events.internal.StartHookEvent;
 import org.vanillamodifier.injection.InjectManager;
+import org.vanillamodifier.injection.injects.GuiInGameHook;
 import org.vanillamodifier.injection.injects.MinecraftHook;
 import org.vanillamodifier.plugin.ModAPI;
 import org.vanillamodifier.plugin.ModLoader;
@@ -40,7 +43,8 @@ public class VanillaModifier {
     }
 
     private static void addHooks() throws ClassNotFoundException {
-        CODE_INJECTOR.addProcessor(MinecraftHook.class,Class.forName("net.minecraft.client.Minecraft"));
+        CODE_INJECTOR.addProcessor(MinecraftHook.class, Minecraft.class);
+        CODE_INJECTOR.addProcessor(GuiInGameHook.class, GuiIngame.class);
     }
 
     public static void processInjection(){

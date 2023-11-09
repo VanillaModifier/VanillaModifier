@@ -24,6 +24,7 @@ dependencies {
     implementation("org.ow2.asm:asm-analysis:9.5")
     implementation("org.ow2.asm:asm-commons:9.5")
     implementation("com.github.cubk1:EventManager:-SNAPSHOT")
+    compileOnly(files("client/client.jar"))
     compileOnly("com.google.code.gson:gson:2.8.8")
     compileOnly("org.lwjgl:lwjgl:2.9.4-nightly")
     compileOnly("org.lwjgl:util:2.9.4-nightly")

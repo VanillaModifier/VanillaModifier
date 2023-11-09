@@ -48,3 +48,4 @@ bin/
 .idea/vcs.xml
 .idea/thriftCompiler.xml
 .idea/workspace.xml
+.idea/uiDesigner.xml

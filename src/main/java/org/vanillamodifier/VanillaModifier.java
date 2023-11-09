@@ -26,11 +26,17 @@ public class VanillaModifier {
             modDataDir.mkdir();
         API.loadAll(modDataDir);
         try {
-            addHooks();
+            AddHookEvent event = new AddHookEvent();
+            EVENT_BUS.call(event);
+            if(!event.isCancelled())
+                addHooks();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-        processInjection();
+        StartHookEvent event = new StartHookEvent();
+        EVENT_BUS.call(event);
+        if(!event.isCancelled())
+            processInjection();
     }
 
     private static void addHooks() throws ClassNotFoundException {

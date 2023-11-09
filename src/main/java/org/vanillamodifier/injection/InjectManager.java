@@ -7,6 +7,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import org.vanillamodifier.VanillaModifier;
 import org.vanillamodifier.interfaces.ClassTransformer;
+import org.vanillamodifier.interfaces.NameTransformer;
 import org.vanillamodifier.loader.NativeWrapper;
 import org.vanillamodifier.struct.Returnable;
 import org.vanillamodifier.util.ASMUtil;
@@ -22,6 +23,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.objectweb.asm.Opcodes.*;
 
 public class InjectManager implements ClassTransformer {
+    private NameTransformer nameTransformer = source -> {
+        System.out.println(source);
+        return source;
+    };
+
     private final Map<ClassNode,String> classNodes = new ConcurrentHashMap<>();
     private final List<Class<?>> needTransform = new ArrayList<>();
     private final ClassNode wrapper;
@@ -30,6 +36,10 @@ public class InjectManager implements ClassTransformer {
     public InjectManager(){
         wrapper = new ClassNode();
         wrapper.visit(V1_8, ACC_PUBLIC, "InjectWrapper_" + RandomStringUtil.getRandomString(10), null, "java/lang/Object", null);
+    }
+
+    public void setNameTransformer(NameTransformer nameTransformer) {
+        this.nameTransformer = nameTransformer;
     }
 
     public boolean isDefineWrapper() {
@@ -41,21 +51,30 @@ public class InjectManager implements ClassTransformer {
     }
 
     public void process(){
-        Map<Class<?>,byte[]> transformMap = new ConcurrentHashMap<>();
-        for(Class<?> clazz : needTransform){
-            ClassNode classNode = ASMUtil.toClassNode(NativeWrapper.getClassBytes(clazz));
-            transform(classNode);
-            transformMap.put(clazz,ASMUtil.toBytes(classNode));
-        }
-        if(isDefineWrapper()){
-            byte[] bytes = compileWrapper();
-            try {
-                 NativeWrapper.defineClass(Class.forName("net.minecraft.client.main.Main").getClassLoader(), bytes);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        try {
+            Map<Class<?>,byte[]> transformMap = new ConcurrentHashMap<>();
+            for(Class<?> clazz : needTransform){
+                byte[] code = NativeWrapper.getClassBytes(clazz);
+                ClassNode classNode = ASMUtil.toClassNode(code);
+                transform(classNode);
+                transformMap.put(clazz,ASMUtil.toBytes(classNode));
             }
+            if(isDefineWrapper()){
+                byte[] bytes = compileWrapper();
+                try {
+                    NativeWrapper.defineClass(Class.forName("net.minecraft.client.main.Main").getClassLoader(), bytes);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            transformMap.forEach(this::redefineClass);
+        }catch (Throwable e){
+            e.printStackTrace();
         }
-        transformMap.forEach(NativeWrapper::redefineClass);
+    }
+
+    private void redefineClass(Class<?> clazz, byte[] bytes) {
+        NativeWrapper.redefineClass(clazz,bytes);
     }
 
     public void addProcessor(Class<?> processorClass, Class<?> target) {
@@ -70,6 +89,7 @@ public class InjectManager implements ClassTransformer {
             e.printStackTrace();
         }
     }
+
 
     public byte[] compileWrapper(){
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);

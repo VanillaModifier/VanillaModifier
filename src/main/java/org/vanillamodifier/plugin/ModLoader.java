@@ -25,12 +25,15 @@ public class ModLoader {
 	public Class<?> getClassInLoader(String name){
 		for(ClassLoader loader : classLoaderList){
 			try {
-				Class<?> clazz = Class.forName(name, true, loader);
-				return clazz;
+				return Class.forName(name, true, loader);
 			} catch (ClassNotFoundException e) {
 			}
 		}
-		return null;
+		try {
+			return Class.forName(name);
+		} catch (ClassNotFoundException e) {
+			return null;
+		}
 	}
 
 	public IVMLoadingPlugin load(File file) {
@@ -55,7 +58,7 @@ public class ModLoader {
 			throw new RuntimeException("Failed to convert the file path to a URL.", e);
 		}
 		catch(ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			throw new RuntimeException("Failed to create a new instance of the addon.", e);
+			throw new RuntimeException("Failed to create a new instance of the mod.", e);
 		}
 	}
 
@@ -65,22 +68,22 @@ public class ModLoader {
 		try {
 
 			if(!map.containsKey(file)) {
-				throw new RuntimeException(file.getName() + " " + "Addon isn´t loaded!");
+				throw new RuntimeException(file.getName() + " " + "mod isn´t loaded!");
 			}
 			PluginData dataFile = new InfoParser(file).getObject();
 			ClassLoader loader = URLClassLoader.newInstance( new URL[] { file.toURI().toURL() }, getClass().getClassLoader() );
 			Class<?> clazz = Class.forName(dataFile.getMain(), true, loader);
 			Class<? extends IVMLoadingPlugin> instanceClass = clazz.asSubclass(IVMLoadingPlugin.class);
 			Constructor<? extends IVMLoadingPlugin> instanceClassConstructor = instanceClass.getConstructor();
-			IVMLoadingPlugin addon = instanceClassConstructor.newInstance();
-			addon.setDescriptionFile(dataFile);
-			return addon;
+			IVMLoadingPlugin mod = instanceClassConstructor.newInstance();
+			mod.setDescriptionFile(dataFile);
+			return mod;
 		}
 		catch(MalformedURLException e) {
 			throw new RuntimeException("Failed to convert the file path to a URL.", e);
 		}
 		catch(ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			throw new RuntimeException("Failed to create a new instance of the addon.", e);
+			throw new RuntimeException("Failed to create a new instance of the mod.", e);
 		}
 	}
 
@@ -96,36 +99,36 @@ public class ModLoader {
 		if (!(file.getName().endsWith(".jar"))) throw new RuntimeException("File have to be a Jar! " + file.getName());
 		try {
 			if(map.containsKey(file)) {
-				throw new RuntimeException(file.getName() + " " + "Addon already loaded.");
+				throw new RuntimeException(file.getName() + " " + "mod already loaded.");
 			}
 			PluginData dataFile = new InfoParser(file).getObject();
 			ClassLoader loader = URLClassLoader.newInstance( new URL[] { file.toURI().toURL() }, getClass().getClassLoader() );
 			Class<?> clazz = Class.forName(dataFile.getMain(), true, loader);
 			Class<? extends IVMLoadingPlugin> instanceClass = clazz.asSubclass(IVMLoadingPlugin.class);
 			Constructor<? extends IVMLoadingPlugin> instanceClassConstructor = instanceClass.getConstructor();
-			IVMLoadingPlugin addon = instanceClassConstructor.newInstance();
-			addon.setDescriptionFile(dataFile);
-			map.put(file, addon);
-			addon.onLoad();
-			return addon;
+			IVMLoadingPlugin mod = instanceClassConstructor.newInstance();
+			mod.setDescriptionFile(dataFile);
+			map.put(file, mod);
+			mod.onLoad();
+			return mod;
 		}
 		catch(MalformedURLException e) {
 			throw new RuntimeException("Failed to convert the file path to a URL.", e);
 		}
 		catch(ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			throw new RuntimeException("Failed to create a new instance of the addon.", e);
+			throw new RuntimeException("Failed to create a new instance of the mod.", e);
 		}
 	}
 
 	public IVMLoadingPlugin unload(File file) {
 		if (!(file.getName().endsWith(".jar"))) throw new RuntimeException("File have to be a Jar! " + file.getName());
 		if(!map.containsKey(file)) {
-			throw new RuntimeException("Can't unload a addon that wasn't loaded in the first place.");
+			throw new RuntimeException("Can't unload a mod that wasn't loaded in the first place.");
 		}
-		IVMLoadingPlugin addon = map.get(file);
-		addon.onUnload();
+		IVMLoadingPlugin mod = map.get(file);
+		mod.onUnload();
 		map.remove(file);
-		return addon;
+		return mod;
 	}
 
 	public void reload(File file) {

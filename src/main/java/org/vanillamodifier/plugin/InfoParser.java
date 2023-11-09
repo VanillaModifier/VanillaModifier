@@ -27,7 +27,7 @@ public class InfoParser {
             while(entries.hasMoreElements() && pluginJson == null){
                 ZipEntry entry = entries.nextElement();
 
-                if(!entry.isDirectory() && entry.getName().equals("plugin.json")) {
+                if(!entry.isDirectory() && entry.getName().equals("mod.json")) {
                     InputStream stream = zipFile.getInputStream(entry);
                     try {
                         pluginJson = new Gson().fromJson(new InputStreamReader(stream), PluginData.class);

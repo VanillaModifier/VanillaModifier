@@ -115,7 +115,7 @@ public class InjectManager implements ClassTransformer {
                 wrapper.methods.add(injectToTargetMethodNode);
 
                 for (MethodNode targetMethodNode : classNode.methods) {
-                    if (!targetMethodNode.name.equals(method.name())) {
+                    if (!targetMethodNode.name.equals(method.name()) || !targetMethodNode.desc.equals(method.desc())) {
                         continue;
                     }
 

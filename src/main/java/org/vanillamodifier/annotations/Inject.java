@@ -12,4 +12,5 @@ public @interface Inject {
     String name();
     String desc();
     Position at();
+    boolean instance() default false;
 }

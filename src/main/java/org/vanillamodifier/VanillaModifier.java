@@ -1,18 +1,14 @@
 package org.vanillamodifier;
 
 import com.cubk.event.EventManager;
-import com.cubk.event.annotations.EventTarget;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiIngame;
 import org.tinylog.Logger;
-import org.vanillamodifier.events.client.RenderGameOverlayEvent;
 import org.vanillamodifier.events.internal.AddHookEvent;
 import org.vanillamodifier.events.internal.StartHookEvent;
 import org.vanillamodifier.injection.InjectManager;
-import org.vanillamodifier.injection.injects.GuiInGameHook;
-import org.vanillamodifier.injection.injects.MinecraftHook;
+import org.vanillamodifier.injection.injects.*;
 import org.vanillamodifier.plugin.ModAPI;
 import org.vanillamodifier.plugin.ModLoader;
+import org.vanillamodifier.util.PlayerStateManager;
 
 import java.io.File;
 
@@ -20,6 +16,7 @@ public class VanillaModifier {
     public static final InjectManager CODE_INJECTOR = new InjectManager();
     public static final ModAPI API = ModAPI.getApi(pluginLoader -> new ModLoader());
     public static final EventManager EVENT_BUS = new EventManager();
+    public static final PlayerStateManager PLAYER_STATE_MANAGER = new PlayerStateManager();
 
     public static final File vmDataDir = new File(System.getProperty("user.home"),".vanillamodifier");
     public static final File modDataDir = new File(vmDataDir,"mods");
@@ -48,8 +45,21 @@ public class VanillaModifier {
 
     private static void addHooks() throws ClassNotFoundException {
         Logger.info("Registering event hooks...");
-        CODE_INJECTOR.addProcessor(MinecraftHook.class, Minecraft.class);
-        CODE_INJECTOR.addProcessor(GuiInGameHook.class, GuiIngame.class);
+        CODE_INJECTOR.addProcessor(MinecraftHook.class, getClazz("net.minecraft.client.Minecraft"));
+        CODE_INJECTOR.addProcessor(GuiInGameHook.class, getClazz("net.minecraft.client.gui.GuiIngame"));
+        CODE_INJECTOR.addProcessor(EntityPlayerSPHook.class, getClazz("net.minecraft.client.entity.EntityPlayerSP"));
+    }
+
+    public static Class<?> getClazz(String name){
+        try {
+            return Thread.currentThread().getContextClassLoader().loadClass(name);
+        } catch (ClassNotFoundException e) {
+            try {
+                return Class.forName(name);
+            } catch (ClassNotFoundException ex) {
+                return API.getLoader().getClassInLoader(name);
+            }
+        }
     }
 
     public static void processInjection(){

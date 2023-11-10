@@ -18,6 +18,7 @@ import org.vanillamodifier.annotations.Inject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +79,9 @@ public class InjectManager implements IClassTransformer {
     }
 
     private void redefineClass(Class<?> clazz, byte[] bytes) {
+        try{FileOutputStream fileOutputStream = new FileOutputStream("dbg_" + clazz.getName() + ".class");
+            fileOutputStream.write(bytes);
+            fileOutputStream.close();}catch (Exception e){e.printStackTrace();}
         NativeWrapper.redefineClass(clazz,bytes);
     }
 
@@ -141,7 +145,7 @@ public class InjectManager implements IClassTransformer {
                 wrapper.methods.add(injectToTargetMethodNode);
 
                 for (MethodNode targetMethodNode : classNode.methods) {
-                    if (!targetMethodNode.name.equals(method.name()) || !targetMethodNode.desc.equals(method.desc())) {
+                    if (!targetMethodNode.name.equals(method.name()) || (!targetMethodNode.desc.equals(method.desc()) && !targetMethodNode.desc.contains(classNode.name))) {
                         continue;
                     }
 
@@ -154,6 +158,10 @@ public class InjectManager implements IClassTransformer {
                     InsnList insnList = new InsnList();
 
                     Type[] argumentTypes = Type.getMethodType(targetMethodNode.desc).getArgumentTypes();
+
+                    if (injectMethodNode.desc.contains(classNode.name) && !Modifier.isStatic(injectMethodNode.access) && method.instance()) {
+                        insnList.add(new VarInsnNode(ALOAD, 0));
+                    }
 
                     if (injectMethodNode.desc.contains(ASMUtil.getDescriptor(Returnable.class))) {
                         insnList.add(new TypeInsnNode(NEW, ASMUtil.getOwner(Returnable.class)));
@@ -191,15 +199,14 @@ public class InjectManager implements IClassTransformer {
                             case "D":
                             case "F":
                                 insnList.add(new MethodInsnNode(INVOKEVIRTUAL, ASMUtil.getOwner(Returnable.class), "getReturnValue" + returnDesc, "()" + returnDesc));
-                                break;
                             default:
                                 insnList.add(new VarInsnNode(ALOAD, argumentTypes.length + 1));
                                 insnList.add(new MethodInsnNode(INVOKEVIRTUAL, ASMUtil.getOwner(Returnable.class), "getReturnValue", "()" + Type.getDescriptor(Object.class)));
                                 insnList.add(new TypeInsnNode(CHECKCAST, returnDesc));
-                                insnList.add(new InsnNode(ASMUtil.getReturnOpcode(returnDesc)));
-                                insnList.add(cancelLabel);
-                                insnList.add(new FrameNode(F_SAME, 0, null, 0, null));
                         }
+                        insnList.add(new InsnNode(ASMUtil.getReturnOpcode(returnDesc)));
+                        insnList.add(cancelLabel);
+                        insnList.add(new FrameNode(F_SAME, 0, null, 0, null));
                     }
 
                     switch (method.at().value()) {
